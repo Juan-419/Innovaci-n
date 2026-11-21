@@ -148,6 +148,5 @@ npm run start   # Ejecuta el servidor en modo producción (node server.ts)
 
 ## Contexto académico
 
-Proyecto integrador desarrollado en la **Universidad Católica de Colombia** — Facultad de Ingeniería · Programa de Ingeniería Industrial · Asignatura *Innovación y Emprendimiento (2026-3)* — **Grupo 4**.
+Proyecto integrador desarrollado en la **Universidad Católica de Colombia** — Facultad de Ingeniería · Programa de Ingeniería Industrial e Ingeniería de sistemas · Asignatura *Innovación y Emprendimiento (2026-3)* — **Grupo 4**.
 
-La documentación completa del proyecto y las capturas de validación interna se encuentran en la carpeta `docs/`.
