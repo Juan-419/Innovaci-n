@@ -1,0 +1,6 @@
+{
+  "name": "Normandía Campo",
+  "description": "Aplicación móvil guiada de registro de ordeño y producción en campo, diseñada con alto contraste cálido y modo noche.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
