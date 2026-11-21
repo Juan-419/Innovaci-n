@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.normandia.campo",
+        "sha256_cert_fingerprints": ["74:FB:5E:26:6D:4A:0A:89:79:23:DC:B9:D7:63:66:72:36:FD:4C:FC:74:7D:02:82:5F:05:EE:D6:C9:15:2F:61"]
+      }
+    }]
