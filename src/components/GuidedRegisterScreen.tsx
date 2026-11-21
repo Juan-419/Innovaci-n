@@ -77,7 +77,7 @@ export function GuidedRegisterScreen({
   const [newCowLot, setNewCowLot] = useState('Lote 1');
   const [customLotText, setCustomLotText] = useState('');
   const [newCowBreed, setNewCowBreed] = useState('Normanda');
-  const [newCowPaddock, setNewCowPaddock] = useState('Corral de Ordeño');
+  const [newCowPaddock, setNewCowPaddock] = useState('');
   const [cowFormError, setCowFormError] = useState<string | null>(null);
 
   // Step 2 Milking State
@@ -144,7 +144,7 @@ export function GuidedRegisterScreen({
       ? rawTag.startsWith('#')
         ? rawTag
         : `#${rawTag}`
-      : `#${Math.floor(100 + Math.random() * 899)}`;
+      : 'S/N';
 
     const finalLot =
       newCowLot === 'Otro'
@@ -156,7 +156,7 @@ export function GuidedRegisterScreen({
       tagNumber: formattedTag,
       lot: finalLot,
       breed: newCowBreed === 'Otra' ? 'Raza Mixta' : `Raza ${newCowBreed}`,
-      paddock: newCowPaddock.trim() || 'Corral de Ordeño',
+      paddock: newCowPaddock.trim() || 'Por asignar',
       imageUrl:
         cows.length % 2 === 0 ? COW_MARIPOSA_CONFIRM_IMG : COW_MARIPOSA_STEP2_IMG,
       defaultLiters: 16,
@@ -168,6 +168,7 @@ export function GuidedRegisterScreen({
     setNewCowName('');
     setNewCowTag('');
     setCustomLotText('');
+    setNewCowPaddock('');
     setCowFormError(null);
     setShowAddCowForm(false);
     setStep(2);
