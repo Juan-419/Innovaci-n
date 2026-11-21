@@ -334,7 +334,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distDir = path.resolve(__dirname, 'dist');
-    app.use(express.static(distDir));
+    app.use(express.static(distDir, { dotfiles: 'allow' }));
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api/')) return next();
       res.sendFile(path.join(distDir, 'index.html'));

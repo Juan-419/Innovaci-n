@@ -1,4 +1,4 @@
-const CACHE_NAME = 'normandia-campo-v1';
+const CACHE_NAME = 'normandia-campo-v2';
 const APP_SHELL_URLS = ['/', '/manifest.webmanifest', '/icon.svg', '/pwa-192x192.png', '/pwa-512x512.png'];
 
 self.addEventListener('install', (event) => {
@@ -24,7 +24,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/.well-known/')) return;
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {

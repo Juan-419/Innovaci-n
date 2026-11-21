@@ -37,12 +37,12 @@ export function WelcomeRegistrationScreen({
 
   return (
     <div
-      className={`min-h-screen flex flex-col justify-between p-4 sm:p-6 antialiased transition-colors ${
+      className={`min-h-[100dvh] flex flex-col justify-between p-3.5 sm:p-6 antialiased transition-colors ${
         isNight ? 'bg-[#121212] text-white' : 'bg-[#F7F4EB] text-[#18181B]'
       }`}
     >
       {/* Top Bar */}
-      <div className="w-full max-w-lg mx-auto flex items-center justify-between pt-2">
+      <div className="w-full max-w-lg mx-auto flex items-center justify-between pt-1">
         <div className="flex items-center gap-2.5">
           <SafeImage
             src={NORMANDIA_LOGO_URL}
@@ -50,7 +50,7 @@ export function WelcomeRegistrationScreen({
             className="h-9 w-9 rounded-lg object-contain"
             fallbackIcon="agriculture"
           />
-          <span className="font-display text-[22px] font-bold">Normandía</span>
+          <span className="font-display text-[21px] font-bold">Normandía</span>
         </div>
 
         <button
@@ -79,26 +79,26 @@ export function WelcomeRegistrationScreen({
       </div>
 
       {/* Main Registration Card */}
-      <div className="w-full max-w-lg mx-auto my-auto py-6">
+      <div className="w-full max-w-lg mx-auto my-auto py-3 sm:py-6">
         <div
-          className={`rounded-2xl p-6 sm:p-8 border-2 space-y-6 ${
+          className={`rounded-2xl p-5 sm:p-8 border-2 space-y-4 sm:space-y-6 ${
             isNight
               ? 'bg-[#1A1A1A] border-[#3A3A3A] shadow-[6px_6px_0px_#000000]'
               : 'bg-[#FFFDF8] border-[#18181B] shadow-[6px_6px_0px_#18181B]'
           }`}
         >
-          <div className="space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-[#B85D19] text-white border-2 border-[#18181B] shadow-[3px_3px_0px_#18181B] flex items-center justify-center">
-              <span className="material-symbols-outlined text-[36px] ms-filled">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-[#B85D19] text-white border-2 border-[#18181B] shadow-[3px_3px_0px_#18181B] flex items-center justify-center">
+              <span className="material-symbols-outlined text-[28px] sm:text-[36px] ms-filled">
                 waving_hand
               </span>
             </div>
 
-            <h1 className="font-display text-[30px] font-bold leading-tight pt-2">
+            <h1 className="font-display text-[26px] sm:text-[30px] font-bold leading-tight pt-1">
               ¡Bienvenido a Normandía!
             </h1>
             <p
-              className={`text-[18px] leading-relaxed ${
+              className={`text-[16px] sm:text-[18px] leading-snug sm:leading-relaxed ${
                 isNight ? 'text-[#D1D5DB]' : 'text-[#27272A]'
               }`}
             >
@@ -106,11 +106,11 @@ export function WelcomeRegistrationScreen({
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
               <label
                 htmlFor="operator-name-input"
-                className="font-display text-[17px] font-bold block"
+                className="font-display text-[16px] sm:text-[17px] font-bold block"
               >
                 Tu nombre completo o como te conocen:
               </label>
@@ -125,7 +125,7 @@ export function WelcomeRegistrationScreen({
                   if (errorMsg) setErrorMsg(null);
                 }}
                 placeholder="Ej: Don Carlos, María, Juan..."
-                className={`w-full min-h-[64px] px-4 rounded-xl border-2 text-[18px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B85D19] ${
+                className={`w-full min-h-[56px] sm:min-h-[64px] px-4 rounded-xl border-2 text-[17px] sm:text-[18px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B85D19] ${
                   isNight
                     ? 'bg-[#222222] border-[#444444] text-white placeholder:text-[#9CA3AF]'
                     : 'bg-[#FFFDF8] border-[#18181B] text-[#18181B] placeholder:text-[#71717A]'
@@ -140,20 +140,20 @@ export function WelcomeRegistrationScreen({
 
             <button
               type="submit"
-              className="w-full min-h-[64px] px-6 rounded-xl bg-[#15803D] hover:bg-[#116932] text-white font-display text-[20px] font-bold border-2 border-[#18181B] shadow-[4px_4px_0px_#18181B] active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0px_#18181B] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[56px] sm:min-h-[64px] px-6 rounded-xl bg-[#15803D] hover:bg-[#116932] text-white font-display text-[19px] sm:text-[20px] font-bold border-2 border-[#18181B] shadow-[4px_4px_0px_#18181B] active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0px_#18181B] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Entrar a la Finca</span>
-              <span className="material-symbols-outlined text-[28px]">arrow_forward</span>
+              <span className="material-symbols-outlined text-[26px]">arrow_forward</span>
             </button>
           </form>
 
           <div
-            className={`pt-4 border-t space-y-3 ${
+            className={`pt-3 sm:pt-4 border-t space-y-2.5 ${
               isNight ? 'border-[#333333]' : 'border-[#18181B]/15'
             }`}
           >
             <p
-              className={`text-[15px] text-center ${
+              className={`text-[14px] sm:text-[15px] text-center ${
                 isNight ? 'text-[#9CA3AF]' : 'text-[#554336]'
               }`}
             >
@@ -163,15 +163,15 @@ export function WelcomeRegistrationScreen({
               type="button"
               disabled={authLoading}
               onClick={onSignInGoogle}
-              className={`w-full min-h-[56px] px-4 rounded-xl font-display text-[17px] font-bold border-2 border-[#18181B] shadow-[3px_3px_0px_#18181B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ${
+              className={`w-full min-h-[52px] px-4 rounded-xl font-display text-[16px] sm:text-[17px] font-bold border-2 border-[#18181B] shadow-[3px_3px_0px_#18181B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ${
                 isNight ? 'bg-[#222222] text-white' : 'bg-[#FFFDF8] text-[#18181B]'
               }`}
             >
-              <span className="material-symbols-outlined text-[22px] text-[#B85D19]">
+              <span className="material-symbols-outlined text-[22px] text-[#B85D19] shrink-0">
                 account_circle
               </span>
-              <span>
-                {authLoading ? 'Conectando...' : 'Registrarme / Entrar con Google'}
+              <span className="leading-tight">
+                {authLoading ? 'Conectando...' : 'Entrar con Google'}
               </span>
             </button>
           </div>
@@ -179,8 +179,8 @@ export function WelcomeRegistrationScreen({
       </div>
 
       {/* Bottom Reassurance */}
-      <div className="w-full max-w-lg mx-auto pb-2 flex items-center justify-center gap-2 text-[14px] opacity-85">
-        <span className="material-symbols-outlined text-[18px] text-[#15803D]">lock</span>
+      <div className="w-full max-w-lg mx-auto pb-1 flex items-center justify-center gap-2 text-[13px] sm:text-[14px] opacity-85 text-center">
+        <span className="material-symbols-outlined text-[18px] text-[#15803D] shrink-0">lock</span>
         <span>Tus registros se guardan incluso sin internet en el potrero.</span>
       </div>
     </div>

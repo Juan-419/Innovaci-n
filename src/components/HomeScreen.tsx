@@ -33,11 +33,12 @@ export function HomeScreen({
   const [supportModalOpen, setSupportModalOpen] = useState(false);
 
   const totalLotsSet = new Set(cows.map((c) => c.lot));
-  const totalLots = Math.max(totalLotsSet.size, 3);
+  const totalLots = totalLotsSet.size;
   const completedLotsSet = new Set(records.map((r) => r.lot));
   const completedLots = Math.min(totalLots, completedLotsSet.size);
   const pendingLots = Math.max(0, totalLots - completedLots);
-  const progressPercent = Math.round((completedLots / totalLots) * 100);
+  const progressPercent =
+    totalLots > 0 ? Math.round((completedLots / totalLots) * 100) : 0;
 
   const latestRecord = records[0];
   const offlineCount = records.filter((r) => r.syncStatus === 'offline').length;
@@ -182,9 +183,13 @@ export function HomeScreen({
                     isNight ? 'text-[#D1D5DB]' : 'text-[#1C1917]'
                   }`}
                 >
-                  {pendingLots === 0
-                    ? 'Ya completaste todos los lotes de hoy.'
-                    : 'No tienes alertas pendientes para hoy.'}
+                  {cows.length === 0
+                    ? 'Todo listo. Registra tu primera vaca en Nuevo Registro.'
+                    : records.length === 0
+                      ? 'Tus vacas están listas. Toca Nuevo Registro para anotar hoy.'
+                      : pendingLots === 0
+                        ? 'Ya completaste todos los lotes de hoy.'
+                        : 'No tienes alertas pendientes para hoy.'}
                 </span>
               </div>
             </div>
@@ -277,7 +282,9 @@ export function HomeScreen({
                   isNight ? 'text-[#FFB784]' : 'text-primary'
                 }`}
               >
-                {cows.length} vacas en finca
+                {cows.length === 0
+                  ? 'Sin vacas aún'
+                  : `${cows.length} ${cows.length === 1 ? 'vaca' : 'vacas'} en finca`}
               </span>
             </div>
 
@@ -407,7 +414,7 @@ export function HomeScreen({
             </div>
 
             {/* Última Actividad */}
-            {latestRecord && (
+            {latestRecord ? (
               <button
                 type="button"
                 onClick={onViewTodayRecords}
@@ -503,6 +510,42 @@ export function HomeScreen({
                   </div>
                 </div>
               </button>
+            ) : (
+              <div
+                className={`w-full rounded-xl p-5 shadow-md flex items-center gap-3.5 ${
+                  isNight
+                    ? 'bg-[#1A1A1A] border border-[#333333]'
+                    : 'bg-surface-container-lowest'
+                }`}
+              >
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                    isNight
+                      ? 'bg-[#2A2A2A] text-[#FFB784]'
+                      : 'bg-surface-container text-primary'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[26px]">
+                    edit_calendar
+                  </span>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span
+                    className={`font-display text-[18px] font-bold ${
+                      isNight ? 'text-white' : 'text-on-surface'
+                    }`}
+                  >
+                    Aún no hay ordeños hoy
+                  </span>
+                  <span
+                    className={`text-[15px] leading-snug ${
+                      isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    Toca «NUEVO REGISTRO» para agregar tu vaca y anotar los litros.
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 
@@ -536,7 +579,9 @@ export function HomeScreen({
                       isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
                     }`}
                   >
-                    {records.length} guardados correctamente
+                    {records.length === 0
+                      ? 'Todavía no hay registros hoy'
+                      : `${records.length} ${records.length === 1 ? 'guardado correctamente' : 'guardados correctamente'}`}
                   </span>
                 </div>
               </div>

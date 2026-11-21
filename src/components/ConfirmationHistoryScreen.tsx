@@ -52,8 +52,60 @@ export function ConfirmationHistoryScreen({
     [records]
   );
 
+  const neoBorder = isNight ? 'border-2 border-[#3A3A3A]' : 'border-2 border-[#1b1b1e]';
+  const neoShadow = isNight
+    ? 'shadow-[4px_4px_0px_#000000]'
+    : 'shadow-[4px_4px_0px_#1b1b1e]';
+
   if (!activeRecord) {
-    return null;
+    return (
+      <div className="flex flex-col w-full pb-6 space-y-5">
+        <div className="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            onClick={onCloseToHome}
+            className={`min-h-[48px] px-3.5 rounded-xl flex items-center gap-1.5 active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer ${
+              isNight
+                ? 'bg-[#222222] text-white border-2 border-[#3A3A3A] shadow-[2px_2px_0px_#000000]'
+                : 'bg-surface-container-high active:bg-surface-variant text-on-surface shadow-[2px_2px_0px_#1b1b1e]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[24px]">close</span>
+            <span className="font-display text-[16px] font-semibold">Cerrar</span>
+          </button>
+        </div>
+
+        <div
+          className={`rounded-2xl p-6 sm:p-8 text-center space-y-4 ${neoBorder} ${neoShadow} ${
+            isNight ? 'bg-[#1A1A1A] text-white' : 'bg-[#FFFDF8] text-[#18181B]'
+          }`}
+        >
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#B85D19] text-white border-2 border-[#18181B] shadow-[3px_3px_0px_#18181B] flex items-center justify-center">
+            <span className="material-symbols-outlined text-[36px]">receipt_long</span>
+          </div>
+          <h1 className="font-display text-[28px] font-bold leading-tight">
+            Todavía no hay comprobantes hoy
+          </h1>
+          <p
+            className={`text-[17px] leading-relaxed max-w-md mx-auto ${
+              isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
+            }`}
+          >
+            Hola {operatorName}, cuando registres tu primera vaca y sus litros, aquí aparecerá el comprobante y el historial del día.
+          </p>
+          <button
+            type="button"
+            onClick={onRegisterNextCow}
+            className="w-full max-w-md mx-auto min-h-[64px] px-6 rounded-xl bg-[#15803D] hover:bg-[#116932] text-white font-display text-[19px] font-bold border-2 border-[#18181B] shadow-[4px_4px_0px_#18181B] active:translate-x-1 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[26px] ms-filled">
+              add_circle
+            </span>
+            <span>REGISTRAR PRIMER ORDEÑO</span>
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const displayOperator = activeRecord.operator || operatorName;
@@ -70,11 +122,6 @@ export function ConfirmationHistoryScreen({
       setTimeout(() => setCopied(false), 2500);
     }
   };
-
-  const neoBorder = isNight ? 'border-2 border-[#3A3A3A]' : 'border-2 border-[#1b1b1e]';
-  const neoShadow = isNight
-    ? 'shadow-[4px_4px_0px_#000000]'
-    : 'shadow-[4px_4px_0px_#1b1b1e]';
 
   return (
     <div className="flex flex-col w-full pb-6 space-y-5">
@@ -462,7 +509,7 @@ export function ConfirmationHistoryScreen({
               <span>
                 {showAllList
                   ? 'Ocultar lista de hoy'
-                  : `Ver Todos los Registros de Hoy (${records.length} vacas)`}
+                  : `Ver Todos los Registros de Hoy (${records.length} ${records.length === 1 ? 'vaca' : 'vacas'})`}
               </span>
             </button>
 
@@ -531,7 +578,7 @@ export function ConfirmationHistoryScreen({
                     isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
                   }`}
                 >
-                  {records.length} vacas • {totalLitersToday.toFixed(1)} Litros totales
+                  {records.length} {records.length === 1 ? 'vaca' : 'vacas'} • {totalLitersToday.toFixed(1)} Litros totales
                 </p>
               </div>
               {offlineRecordsCount > 0 && (

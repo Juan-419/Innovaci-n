@@ -65,7 +65,7 @@ export function GuidedRegisterScreen({
 
   const [step, setStep] = useState<1 | 2>(initialDraft?.step ?? initialStep);
   const [selectedCowId, setSelectedCowId] = useState<string>(
-    initialDraft?.cowId ?? nextPendingCow.id
+    initialDraft?.cowId ?? nextPendingCow?.id ?? ''
   );
   const [lotFilter, setLotFilter] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -74,7 +74,7 @@ export function GuidedRegisterScreen({
   // New Cow Form State
   const [newCowName, setNewCowName] = useState('');
   const [newCowTag, setNewCowTag] = useState('');
-  const [newCowLot, setNewCowLot] = useState('Lote 2');
+  const [newCowLot, setNewCowLot] = useState('Lote 1');
   const [customLotText, setCustomLotText] = useState('');
   const [newCowBreed, setNewCowBreed] = useState('Normanda');
   const [newCowPaddock, setNewCowPaddock] = useState('Corral de Ordeño');
@@ -82,7 +82,7 @@ export function GuidedRegisterScreen({
 
   // Step 2 Milking State
   const [liters, setLiters] = useState<number>(
-    initialDraft?.liters ?? nextPendingCow.defaultLiters
+    initialDraft?.liters ?? nextPendingCow?.defaultLiters ?? 16
   );
   const [shift, setShift] = useState<ShiftType>(initialDraft?.shift ?? 'Mañana');
   const [quality, setQuality] = useState<MilkQuality>(
@@ -174,6 +174,7 @@ export function GuidedRegisterScreen({
   };
 
   const handleSaveDraftClick = () => {
+    if (!selectedCow) return;
     onSaveDraft({
       step,
       cowId: selectedCow.id,
@@ -189,6 +190,7 @@ export function GuidedRegisterScreen({
   };
 
   const handleComplete = () => {
+    if (!selectedCow) return;
     onCompleteRecord({
       cow: selectedCow,
       liters,
@@ -307,8 +309,11 @@ export function GuidedRegisterScreen({
 
               <button
                 type="button"
-                onClick={() => setStep(2)}
-                className="flex flex-col gap-1 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-primary rounded"
+                disabled={!selectedCow}
+                onClick={() => {
+                  if (selectedCow) setStep(2);
+                }}
+                className="flex flex-col gap-1 text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-primary rounded"
               >
                 <div
                   className={`h-3.5 rounded-full ${
@@ -352,57 +357,83 @@ export function GuidedRegisterScreen({
           </div>
 
           {/* Selected Cow Reference Card */}
-          <div
-            className={`rounded-xl p-3.5 flex items-center justify-between gap-3 ${
-              isNight
-                ? 'bg-[#1A1A1A] border border-[#333333]'
-                : 'bg-surface-container-low'
-            }`}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <SafeImage
-                src={selectedCow.imageUrl}
-                alt={`${selectedCow.name} ${selectedCow.tagNumber}`}
-                className="w-16 h-16 rounded-lg object-cover shrink-0"
-                fallbackIcon="pets"
-              />
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`font-display text-[20px] font-bold truncate ${
-                      isNight ? 'text-white' : 'text-on-surface'
+          {selectedCow ? (
+            <div
+              className={`rounded-xl p-3.5 flex items-center justify-between gap-3 ${
+                isNight
+                  ? 'bg-[#1A1A1A] border border-[#333333]'
+                  : 'bg-surface-container-low'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <SafeImage
+                  src={selectedCow.imageUrl}
+                  alt={`${selectedCow.name} ${selectedCow.tagNumber}`}
+                  className="w-16 h-16 rounded-lg object-cover shrink-0"
+                  fallbackIcon="pets"
+                />
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`font-display text-[20px] font-bold truncate ${
+                        isNight ? 'text-white' : 'text-on-surface'
+                      }`}
+                    >
+                      {selectedCow.name} {selectedCow.tagNumber}
+                    </span>
+                    <span className="bg-[#1e8642] text-white px-2 py-0.5 rounded-full text-[12px] font-bold shrink-0">
+                      {selectedCow.lot}
+                    </span>
+                  </div>
+                  <p
+                    className={`text-[14px] truncate ${
+                      isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
                     }`}
                   >
-                    {selectedCow.name} {selectedCow.tagNumber}
-                  </span>
-                  <span className="bg-[#1e8642] text-white px-2 py-0.5 rounded-full text-[12px] font-bold shrink-0">
-                    {selectedCow.lot}
-                  </span>
+                    {selectedCow.breed} • {selectedCow.paddock}
+                  </p>
                 </div>
-                <p
-                  className={`text-[14px] truncate ${
+              </div>
+
+              {step === 2 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className={`min-h-[44px] px-3 rounded-lg text-[14px] font-bold shrink-0 cursor-pointer ${
+                    isNight
+                      ? 'bg-[#2A2A2A] border border-[#444444] text-[#FFB784]'
+                      : 'bg-primary-fixed text-on-primary-fixed'
+                  }`}
+                >
+                  Cambiar
+                </button>
+              )}
+            </div>
+          ) : (
+            <div
+              className={`rounded-xl p-4 flex items-center gap-3 ${
+                isNight
+                  ? 'bg-[#1A1A1A] border border-[#333333]'
+                  : 'bg-surface-container-low'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#B85D19]/15 text-[#B85D19] flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[26px]">pets</span>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="font-display text-[17px] font-bold">
+                  Sin vacas registradas aún
+                </span>
+                <span
+                  className={`text-[14px] ${
                     isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
                   }`}
                 >
-                  {selectedCow.breed} • {selectedCow.paddock}
-                </p>
+                  Registra tu primera vaca para empezar el ordeño.
+                </span>
               </div>
             </div>
-
-            {step === 2 && (
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className={`min-h-[44px] px-3 rounded-lg text-[14px] font-bold shrink-0 cursor-pointer ${
-                  isNight
-                    ? 'bg-[#2A2A2A] border border-[#444444] text-[#FFB784]'
-                    : 'bg-primary-fixed text-on-primary-fixed'
-                }`}
-              >
-                Cambiar
-              </button>
-            )}
-          </div>
+          )}
 
           {/* Offline Reassurance */}
           <div
@@ -682,64 +713,87 @@ export function GuidedRegisterScreen({
                   </span>
                 </button>
 
-                {/* Search Input */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="cow-search-input"
-                    className={`font-display text-[15px] font-bold block ${
-                      isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
-                    }`}
-                  >
-                    Buscar por nombre o número:
-                  </label>
-                  <div className="relative">
-                    <span
-                      className={`material-symbols-outlined text-[24px] absolute left-3.5 top-1/2 -translate-y-1/2 ${
-                        isNight ? 'text-[#9CA3AF]' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      search
-                    </span>
-                    <input
-                      id="cow-search-input"
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Ej: Mariposa o 408..."
-                      className={`w-full min-h-[58px] pl-12 pr-4 rounded-xl border-2 text-[18px] ${
-                        isNight
-                          ? 'bg-[#1A1A1A] border-[#333333] text-white placeholder:text-[#9CA3AF]'
-                          : 'bg-[#FFFDF8] border-[#18181B]/30 text-[#18181B] placeholder:text-[#71717A]'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Lot Filter Tabs */}
-                <div className="flex flex-wrap gap-2">
-                  {availableLots.map((lot) => {
-                    const active = lotFilter === lot;
-                    return (
-                      <button
-                        key={lot}
-                        type="button"
-                        onClick={() => setLotFilter(lot)}
-                        className={`min-h-[48px] px-4 rounded-xl font-display text-[15px] font-bold transition-colors cursor-pointer whitespace-nowrap ${
-                          active
-                            ? 'bg-[#B85D19] text-white shadow-sm'
-                            : isNight
-                              ? 'bg-[#222222] border border-[#333333] text-[#D1D5DB]'
-                              : 'bg-surface-container text-on-surface'
+                {/* Search Input & Lot Filter Tabs (only when there are cows) */}
+                {cows.length > 0 && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="cow-search-input"
+                        className={`font-display text-[15px] font-bold block ${
+                          isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
                         }`}
                       >
-                        {lot}
-                      </button>
-                    );
-                  })}
-                </div>
+                        Buscar por nombre o número:
+                      </label>
+                      <div className="relative">
+                        <span
+                          className={`material-symbols-outlined text-[24px] absolute left-3.5 top-1/2 -translate-y-1/2 ${
+                            isNight ? 'text-[#9CA3AF]' : 'text-on-surface-variant'
+                          }`}
+                        >
+                          search
+                        </span>
+                        <input
+                          id="cow-search-input"
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Ej: Nombre o número..."
+                          className={`w-full min-h-[58px] pl-12 pr-4 rounded-xl border-2 text-[18px] ${
+                            isNight
+                              ? 'bg-[#1A1A1A] border-[#333333] text-white placeholder:text-[#9CA3AF]'
+                              : 'bg-[#FFFDF8] border-[#18181B]/30 text-[#18181B] placeholder:text-[#71717A]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Lot Filter Tabs */}
+                    <div className="flex flex-wrap gap-2">
+                      {availableLots.map((lot) => {
+                        const active = lotFilter === lot;
+                        return (
+                          <button
+                            key={lot}
+                            type="button"
+                            onClick={() => setLotFilter(lot)}
+                            className={`min-h-[48px] px-4 rounded-xl font-display text-[15px] font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                              active
+                                ? 'bg-[#B85D19] text-white shadow-sm'
+                                : isNight
+                                  ? 'bg-[#222222] border border-[#333333] text-[#D1D5DB]'
+                                  : 'bg-surface-container text-on-surface'
+                            }`}
+                          >
+                            {lot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
 
                 {/* Cow Cards */}
-                {filteredCows.length === 0 ? (
+                {cows.length === 0 ? (
+                  <div
+                    className={`rounded-2xl p-6 text-center space-y-2 border-2 ${
+                      isNight
+                        ? 'bg-[#1A1A1A] border-[#333333]'
+                        : 'bg-surface-container-lowest border-[#18181B]/15'
+                    }`}
+                  >
+                    <p className="font-display text-[20px] font-bold">
+                      Tu lista de vacas está vacía
+                    </p>
+                    <p
+                      className={`text-[16px] ${
+                        isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      Toca el botón verde de arriba para registrar tu primera vaca con su nombre y chapeta.
+                    </p>
+                  </div>
+                ) : filteredCows.length === 0 ? (
                   <div
                     className={`rounded-xl p-6 text-center space-y-3 border-2 ${
                       isNight
@@ -826,16 +880,18 @@ export function GuidedRegisterScreen({
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="w-full min-h-[64px] px-6 rounded-xl bg-[#B85D19] hover:bg-[#a24f12] text-white flex items-center justify-center gap-2 shadow-md active:translate-y-0.5 transition-all cursor-pointer"
-                >
-                  <span className="font-display text-[20px] font-bold uppercase tracking-wide">
-                    Continuar con {selectedCow.name} (Paso 2 de 3)
-                  </span>
-                  <span className="material-symbols-outlined text-[28px]">arrow_forward</span>
-                </button>
+                {selectedCow && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="w-full min-h-[64px] px-6 rounded-xl bg-[#B85D19] hover:bg-[#a24f12] text-white flex items-center justify-center gap-2 shadow-md active:translate-y-0.5 transition-all cursor-pointer"
+                  >
+                    <span className="font-display text-[20px] font-bold uppercase tracking-wide">
+                      Continuar con {selectedCow.name} (Paso 2 de 3)
+                    </span>
+                    <span className="material-symbols-outlined text-[28px]">arrow_forward</span>
+                  </button>
+                )}
               </>
             )
           ) : (
@@ -853,7 +909,7 @@ export function GuidedRegisterScreen({
                     isNight ? 'text-white' : 'text-on-surface'
                   }`}
                 >
-                  ¿Cuánto ordeñó {selectedCow.name}?
+                  ¿Cuánto ordeñó {selectedCow?.name ?? 'esta vaca'}?
                 </h1>
                 <p
                   className={`text-[18px] ${

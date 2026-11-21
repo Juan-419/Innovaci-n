@@ -5,7 +5,7 @@ import { ConfirmationHistoryScreen } from './components/ConfirmationHistoryScree
 import { GuidedRegisterScreen } from './components/GuidedRegisterScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { WelcomeRegistrationScreen } from './components/WelcomeRegistrationScreen';
-import { COW_CATALOG, INITIAL_RECORDS } from './data/mockNormandia';
+import { COW_CATALOG } from './data/mockNormandia';
 import { auth, googleAuthProvider } from './lib/firebase';
 import {
   AppScreen,
@@ -56,17 +56,29 @@ function loadInitialCustomCows(): CowProfile[] {
   return [];
 }
 
+const LEGACY_SAMPLE_IDS = new Set(['rec-0840', 'rec-0841', 'rec-0842']);
+
 function loadInitialRecords(): MilkingRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_RECORDS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (r) =>
+            !(
+              r &&
+              typeof r === 'object' &&
+              LEGACY_SAMPLE_IDS.has(r.id) &&
+              r.operator === 'Don Carlos'
+            )
+        );
+      }
     }
   } catch {
     // ignore storage errors
   }
-  return INITIAL_RECORDS;
+  return [];
 }
 
 function loadInitialDraft(): DraftRecord | null {
@@ -124,7 +136,7 @@ export default function App() {
   const [records, setRecords] = useState<MilkingRecord[]>(loadInitialRecords);
   const [draft, setDraft] = useState<DraftRecord | null>(loadInitialDraft);
   const [selectedRecordId, setSelectedRecordId] = useState<string>(
-    () => loadInitialRecords()[0]?.id ?? INITIAL_RECORDS[0].id
+    () => loadInitialRecords()[0]?.id ?? ''
   );
   const [justSaved, setJustSaved] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -351,18 +363,14 @@ export default function App() {
         }
 
         const currentLocal = loadInitialRecords();
-        if (!data.user.seededSampleData && data.records.length === 0) {
-          await syncRecordsWithServer(user, currentLocal, false);
-        } else {
-          const pendingOffline = currentLocal.filter(
-            (r) => r.syncStatus === 'offline'
-          );
-          if (pendingOffline.length > 0) {
-            await syncRecordsWithServer(user, pendingOffline, false);
-          } else if (data.records.length > 0) {
-            setRecords(data.records);
-            setSelectedRecordId(data.records[0].id);
-          }
+        const pendingOffline = currentLocal.filter(
+          (r) => r.syncStatus === 'offline'
+        );
+        if (pendingOffline.length > 0) {
+          await syncRecordsWithServer(user, pendingOffline, false);
+        } else if (data.records.length > 0) {
+          setRecords(data.records);
+          setSelectedRecordId(data.records[0].id);
         }
       } catch {
         // Offline-first fallback
@@ -508,7 +516,7 @@ export default function App() {
     quality: MilkQuality;
     qualityNote?: string;
   }) => {
-    const nextNum = 842 + records.length + 1;
+    const nextNum = records.length + 1;
     const nowTime = new Date().toLocaleTimeString('es-CO', {
       hour: 'numeric',
       minute: '2-digit',
@@ -518,7 +526,7 @@ export default function App() {
 
     const newRecord: MilkingRecord = {
       id: `rec-${Date.now()}`,
-      receiptCode: `#REG-2025-0${nextNum}`,
+      receiptCode: `#REG-2025-${String(nextNum).padStart(4, '0')}`,
       cowId: payload.cow.id,
       cowName: payload.cow.name,
       cowTag: payload.cow.tagNumber,
