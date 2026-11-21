@@ -1,10 +1,11 @@
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppShell } from './components/AppShell';
 import { ConfirmationHistoryScreen } from './components/ConfirmationHistoryScreen';
 import { GuidedRegisterScreen } from './components/GuidedRegisterScreen';
 import { HomeScreen } from './components/HomeScreen';
-import { INITIAL_RECORDS } from './data/mockNormandia';
+import { WelcomeRegistrationScreen } from './components/WelcomeRegistrationScreen';
+import { COW_CATALOG, INITIAL_RECORDS } from './data/mockNormandia';
 import { auth, googleAuthProvider } from './lib/firebase';
 import {
   AppScreen,
@@ -17,6 +18,8 @@ import {
 } from './types/normandia';
 
 const STORAGE_THEME_KEY = 'normandia_theme_v1';
+const STORAGE_OPERATOR_KEY = 'normandia_operator_name_v1';
+const STORAGE_CUSTOM_COWS_KEY = 'normandia_custom_cows_v1';
 const STORAGE_RECORDS_KEY = 'normandia_records_v1';
 const STORAGE_DRAFT_KEY = 'normandia_draft_v1';
 
@@ -28,6 +31,29 @@ function loadInitialTheme(): ThemeMode {
     // ignore storage errors
   }
   return 'calido';
+}
+
+function loadInitialOperatorName(): string | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_OPERATOR_KEY);
+    if (saved && saved.trim().length >= 2) return saved.trim();
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function loadInitialCustomCows(): CowProfile[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_CUSTOM_COWS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return [];
 }
 
 function loadInitialRecords(): MilkingRecord[] {
@@ -69,10 +95,32 @@ function mergeRecords(
   return Array.from(byId.values());
 }
 
+function mergeCustomCows(
+  localCows: CowProfile[],
+  serverCows: CowProfile[]
+): CowProfile[] {
+  const byId = new Map<string, CowProfile>();
+  for (const cow of serverCows) {
+    byId.set(cow.id, { ...cow, isCustom: true });
+  }
+  for (const cow of localCows) {
+    if (!byId.has(cow.id)) {
+      byId.set(cow.id, cow);
+    }
+  }
+  return Array.from(byId.values());
+}
+
 export default function App() {
   const [theme, setTheme] = useState<ThemeMode>(loadInitialTheme);
+  const [operatorName, setOperatorName] = useState<string | null>(
+    loadInitialOperatorName
+  );
+  const [customCows, setCustomCows] = useState<CowProfile[]>(
+    loadInitialCustomCows
+  );
   const [activeScreen, setActiveScreen] = useState<AppScreen>('inicio');
-  const [registerInitialStep, setRegisterInitialStep] = useState<1 | 2>(2);
+  const [registerInitialStep, setRegisterInitialStep] = useState<1 | 2>(1);
   const [records, setRecords] = useState<MilkingRecord[]>(loadInitialRecords);
   const [draft, setDraft] = useState<DraftRecord | null>(loadInitialDraft);
   const [selectedRecordId, setSelectedRecordId] = useState<string>(
@@ -80,12 +128,18 @@ export default function App() {
   );
   const [justSaved, setJustSaved] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState<boolean>(false);
 
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+
+  const allCows = useMemo(
+    () => [...customCows, ...COW_CATALOG],
+    [customCows]
   );
 
   const showToast = useCallback((msg: string) => {
@@ -121,6 +175,24 @@ export default function App() {
 
   useEffect(() => {
     try {
+      if (operatorName) {
+        localStorage.setItem(STORAGE_OPERATOR_KEY, operatorName);
+      }
+    } catch {
+      // ignore
+    }
+  }, [operatorName]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_CUSTOM_COWS_KEY, JSON.stringify(customCows));
+    } catch {
+      // ignore
+    }
+  }, [customCows]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(STORAGE_RECORDS_KEY, JSON.stringify(records));
     } catch {
       // ignore
@@ -138,6 +210,40 @@ export default function App() {
       // ignore
     }
   }, [draft]);
+
+  const syncCowsWithServer = useCallback(
+    async (user: User, cowsToPush: CowProfile[]) => {
+      if (!navigator.onLine || cowsToPush.length === 0) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/cows/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cows: cowsToPush.map((c) => ({
+              clientId: c.id,
+              name: c.name,
+              tagNumber: c.tagNumber,
+              lot: c.lot,
+              breed: c.breed,
+              paddock: c.paddock,
+              imageUrl: c.imageUrl,
+              defaultLiters: c.defaultLiters,
+            })),
+          }),
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { cows: CowProfile[] };
+        setCustomCows((prev) => mergeCustomCows(prev, data.cows));
+      } catch {
+        // keep working offline
+      }
+    },
+    []
+  );
 
   const syncRecordsWithServer = useCallback(
     async (user: User, recordsToPush: MilkingRecord[], notify = false) => {
@@ -205,12 +311,43 @@ export default function App() {
         });
         if (!res.ok) return;
         const data = (await res.json()) as {
-          user: { themePreference: ThemeMode; seededSampleData: boolean };
+          user: {
+            displayName: string | null;
+            themePreference: ThemeMode;
+            seededSampleData: boolean;
+          };
+          cows: CowProfile[];
           records: MilkingRecord[];
         };
 
-        if (data.user.themePreference === 'calido' || data.user.themePreference === 'noche') {
+        if (
+          data.user.themePreference === 'calido' ||
+          data.user.themePreference === 'noche'
+        ) {
           setTheme(data.user.themePreference);
+        }
+
+        const localName = loadInitialOperatorName();
+        if (!localName && data.user.displayName) {
+          setOperatorName(data.user.displayName);
+        } else if (!localName && user.displayName) {
+          setOperatorName(user.displayName);
+        } else if (localName && localName !== data.user.displayName) {
+          await fetch('/api/preferences', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ displayName: localName }),
+          }).catch(() => undefined);
+        }
+
+        const localCustomCows = loadInitialCustomCows();
+        if (localCustomCows.length > 0) {
+          await syncCowsWithServer(user, localCustomCows);
+        } else if (data.cows.length > 0) {
+          setCustomCows(data.cows);
         }
 
         const currentLocal = loadInitialRecords();
@@ -228,12 +365,12 @@ export default function App() {
           }
         }
       } catch {
-        // Offline-first: keep working seamlessly with local records
+        // Offline-first fallback
       }
     });
 
     return () => unsubscribe();
-  }, [syncRecordsWithServer]);
+  }, [syncCowsWithServer, syncRecordsWithServer]);
 
   // Auto-sync queued offline records when connectivity returns
   useEffect(() => {
@@ -244,10 +381,36 @@ export default function App() {
     }
   }, [isOnline, firebaseUser, records, syncRecordsWithServer]);
 
+  const handleUpdateOperatorName = async (newName: string) => {
+    const cleaned = newName.trim();
+    if (cleaned.length < 2) return;
+    setOperatorName(cleaned);
+    showToast(`¡Bienvenido, ${cleaned}!`);
+
+    if (firebaseUser && navigator.onLine) {
+      try {
+        const token = await firebaseUser.getIdToken();
+        await fetch('/api/preferences', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ displayName: cleaned }),
+        });
+      } catch {
+        // ignore network failure
+      }
+    }
+  };
+
   const handleSignIn = async () => {
     setAuthLoading(true);
     try {
-      await signInWithPopup(auth, googleAuthProvider);
+      const cred = await signInWithPopup(auth, googleAuthProvider);
+      if (!operatorName && cred.user.displayName) {
+        setOperatorName(cred.user.displayName);
+      }
       showToast('Cuenta conectada con éxito.');
     } catch {
       showToast('No se pudo conectar la cuenta en este momento.');
@@ -280,14 +443,29 @@ export default function App() {
           body: JSON.stringify({ themePreference: nextTheme }),
         });
       } catch {
-        // ignore network failures on preference sync
+        // ignore
       }
     }
   };
 
+  const handleAddCow = (newCowInput: Omit<CowProfile, 'id'>): CowProfile => {
+    const created: CowProfile = {
+      ...newCowInput,
+      id: `cow-${Date.now()}`,
+      isCustom: true,
+    };
+    setCustomCows((prev) => [created, ...prev]);
+    showToast(`Vaca ${created.name} agregada a tu finca.`);
+
+    if (firebaseUser && navigator.onLine) {
+      syncCowsWithServer(firebaseUser, [created]);
+    }
+    return created;
+  };
+
   const handleNavigate = (screen: AppScreen) => {
     if (screen === 'registrar') {
-      setRegisterInitialStep(2);
+      setRegisterInitialStep(1);
     }
     if (screen === 'historial') {
       setJustSaved(false);
@@ -298,7 +476,7 @@ export default function App() {
 
   const handleStartNewRegistration = () => {
     setDraft(null);
-    setRegisterInitialStep(2);
+    setRegisterInitialStep(1);
     setActiveScreen('registrar');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -336,6 +514,8 @@ export default function App() {
       minute: '2-digit',
     });
 
+    const effectiveOperator = operatorName || firebaseUser?.displayName || 'Ordeñador';
+
     const newRecord: MilkingRecord = {
       id: `rec-${Date.now()}`,
       receiptCode: `#REG-2025-0${nextNum}`,
@@ -352,7 +532,7 @@ export default function App() {
       qualityNote: payload.qualityNote,
       timeFormatted: nowTime,
       dateFormatted: 'Hoy',
-      operator: firebaseUser?.displayName || 'Don Carlos',
+      operator: effectiveOperator,
       syncStatus: 'offline',
     };
 
@@ -373,6 +553,9 @@ export default function App() {
       await handleSignIn();
       return;
     }
+    if (customCows.length > 0) {
+      await syncCowsWithServer(firebaseUser, customCows);
+    }
     const pending = records.filter((r) => r.syncStatus === 'offline');
     if (pending.length === 0) {
       showToast('Todo está al día.');
@@ -383,9 +566,26 @@ export default function App() {
 
   const offlineCount = records.filter((r) => r.syncStatus === 'offline').length;
 
+  // Show first-time name registration screen if operator has not registered a name yet
+  if (!operatorName) {
+    return (
+      <WelcomeRegistrationScreen
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        authLoading={authLoading}
+        onRegisterName={handleUpdateOperatorName}
+        onSignInGoogle={handleSignIn}
+      />
+    );
+  }
+
   return (
     <AppShell
       theme={theme}
+      operatorName={operatorName}
+      onUpdateOperatorName={handleUpdateOperatorName}
+      profileModalOpen={profileModalOpen}
+      onSetProfileModalOpen={setProfileModalOpen}
       onToggleTheme={handleToggleTheme}
       activeScreen={activeScreen}
       onNavigate={handleNavigate}
@@ -420,12 +620,15 @@ export default function App() {
       {activeScreen === 'inicio' && (
         <HomeScreen
           theme={theme}
+          operatorName={operatorName}
+          cows={allCows}
           onToggleTheme={handleToggleTheme}
           records={records}
           draft={draft}
           onStartNewRegistration={handleStartNewRegistration}
           onResumeDraft={handleResumeDraft}
           onViewTodayRecords={() => handleNavigate('historial')}
+          onEditOperatorName={() => setProfileModalOpen(true)}
           onSyncAll={handleSyncAll}
         />
       )}
@@ -433,10 +636,13 @@ export default function App() {
       {activeScreen === 'registrar' && (
         <GuidedRegisterScreen
           theme={theme}
+          operatorName={operatorName}
+          cows={allCows}
           initialStep={registerInitialStep}
           initialDraft={draft}
           todayRecords={records}
           onBackHome={() => handleNavigate('inicio')}
+          onAddCow={handleAddCow}
           onSaveDraft={handleSaveDraft}
           onCompleteRecord={handleCompleteRecord}
         />
@@ -445,6 +651,8 @@ export default function App() {
       {activeScreen === 'historial' && (
         <ConfirmationHistoryScreen
           theme={theme}
+          operatorName={operatorName}
+          cows={allCows}
           records={records}
           selectedRecordId={selectedRecordId}
           justSaved={justSaved}

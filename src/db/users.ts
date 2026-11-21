@@ -31,18 +31,24 @@ export async function getOrCreateUser(
   }
 }
 
-export async function updateUserThemePreference(
+export async function updateUserPreferences(
   uid: string,
-  themePreference: 'calido' | 'noche'
+  updates: { themePreference?: 'calido' | 'noche'; displayName?: string }
 ) {
   try {
-    await db
-      .update(users)
-      .set({ themePreference })
-      .where(eq(users.uid, uid));
+    const setPayload: { themePreference?: string; displayName?: string } = {};
+    if (updates.themePreference) {
+      setPayload.themePreference = updates.themePreference;
+    }
+    if (updates.displayName) {
+      setPayload.displayName = updates.displayName;
+    }
+    if (Object.keys(setPayload).length === 0) return;
+
+    await db.update(users).set(setPayload).where(eq(users.uid, uid));
   } catch (error) {
-    console.error('Database theme update failed:', error);
-    throw new Error('No se pudo guardar la preferencia visual.', { cause: error });
+    console.error('Database user preferences update failed:', error);
+    throw new Error('No se pudieron guardar las preferencias.', { cause: error });
   }
 }
 

@@ -1,35 +1,41 @@
 import { useState } from 'react';
-import { DraftRecord, MilkingRecord, ThemeMode } from '../types/normandia';
+import { CowProfile, DraftRecord, MilkingRecord, ThemeMode } from '../types/normandia';
 import { SafeImage } from './SafeImage';
 
 interface HomeScreenProps {
   theme: ThemeMode;
+  operatorName: string;
+  cows: CowProfile[];
   onToggleTheme: () => void;
   records: MilkingRecord[];
   draft: DraftRecord | null;
-  totalLots?: number;
   onStartNewRegistration: () => void;
   onResumeDraft: () => void;
   onViewTodayRecords: () => void;
+  onEditOperatorName: () => void;
   onSyncAll: () => void;
 }
 
 export function HomeScreen({
   theme,
+  operatorName,
+  cows,
   onToggleTheme,
   records,
   draft,
-  totalLots = 3,
   onStartNewRegistration,
   onResumeDraft,
   onViewTodayRecords,
+  onEditOperatorName,
   onSyncAll,
 }: HomeScreenProps) {
   const isNight = theme === 'noche';
   const [supportModalOpen, setSupportModalOpen] = useState(false);
 
-  const uniqueLotsDone = new Set(records.map((r) => r.lot)).size;
-  const completedLots = Math.min(totalLots, Math.max(uniqueLotsDone, 2));
+  const totalLotsSet = new Set(cows.map((c) => c.lot));
+  const totalLots = Math.max(totalLotsSet.size, 3);
+  const completedLotsSet = new Set(records.map((r) => r.lot));
+  const completedLots = Math.min(totalLots, completedLotsSet.size);
   const pendingLots = Math.max(0, totalLots - completedLots);
   const progressPercent = Math.round((completedLots / totalLots) * 100);
 
@@ -38,11 +44,10 @@ export function HomeScreen({
 
   return (
     <div className="flex flex-col w-full pb-6 space-y-5">
-      {/* Desktop 2-column grid / Mobile single-column stack */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column: Appearance + Greeting + Primary CTA */}
+        {/* Left Column */}
         <div className="lg:col-span-6 flex flex-col space-y-5">
-          {/* THEME / CONTRAST ACCESSIBILITY SWITCH BANNER */}
+          {/* THEME SWITCH BANNER */}
           <div
             className={`w-full p-3 rounded-xl flex items-center justify-between transition-colors ${
               isNight
@@ -116,7 +121,7 @@ export function HomeScreen({
             }`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <span
                   className={`text-[14px] font-bold tracking-wider uppercase ${
                     isNight ? 'text-[#FFB784]' : 'text-on-surface-variant'
@@ -124,13 +129,28 @@ export function HomeScreen({
                 >
                   Panel Normandía
                 </span>
-                <h1
-                  className={`font-display text-[26px] font-bold mt-0.5 ${
-                    isNight ? 'text-white' : 'text-on-surface'
-                  }`}
-                >
-                  ¡Hola, Don Carlos!
-                </h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <h1
+                    className={`font-display text-[26px] font-bold truncate ${
+                      isNight ? 'text-white' : 'text-on-surface'
+                    }`}
+                  >
+                    ¡Hola, {operatorName}!
+                  </h1>
+                  <button
+                    type="button"
+                    onClick={onEditOperatorName}
+                    aria-label="Cambiar mi nombre"
+                    className={`min-h-[36px] px-2.5 rounded-lg text-[13px] font-bold flex items-center gap-1 cursor-pointer shrink-0 ${
+                      isNight
+                        ? 'bg-[#2A2A2A] text-[#FFB784] hover:bg-[#333333]'
+                        : 'bg-surface-container-high text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                    <span>Editar</span>
+                  </button>
+                </div>
               </div>
 
               <div className="bg-[#15803D] text-white px-3 py-1 rounded-full flex items-center gap-1 shadow-sm shrink-0">
@@ -170,7 +190,6 @@ export function HomeScreen({
             </div>
           </div>
 
-          {/* RESUME DRAFT BANNER (ONLY IF SAVED DRAFT EXISTS) */}
           {draft && (
             <button
               type="button"
@@ -200,7 +219,7 @@ export function HomeScreen({
             </button>
           )}
 
-          {/* PRIMARY CALL TO ACTION: FITTS' LAW THUMB-FRIENDLY TACTILE TRIGGER */}
+          {/* PRIMARY CALL TO ACTION */}
           <div className="w-full flex flex-col gap-2">
             <span
               className={`font-display text-[16px] font-bold px-1 ${
@@ -229,7 +248,7 @@ export function HomeScreen({
                     NUEVO REGISTRO
                   </span>
                   <span className="text-[17px] font-medium text-white/90 mt-0.5">
-                    Paso a paso guiado • 2 min
+                    Escoge o agrega tu vaca • 2 min
                   </span>
                 </div>
               </div>
@@ -242,9 +261,8 @@ export function HomeScreen({
           </div>
         </div>
 
-        {/* Right Column: Today's Summary + Latest Activity + Secondary Actions */}
+        {/* Right Column */}
         <div className="lg:col-span-6 flex flex-col space-y-5">
-          {/* TODAY'S SUMMARY CARDS */}
           <div className="w-full flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
               <span
@@ -259,11 +277,11 @@ export function HomeScreen({
                   isNight ? 'text-[#FFB784]' : 'text-primary'
                 }`}
               >
-                14 Mayo 2025
+                {cows.length} vacas en finca
               </span>
             </div>
 
-            {/* CARD 1: ESTADO DE LA JORNADA */}
+            {/* Estado de la Jornada */}
             <div
               className={`w-full rounded-xl p-5 shadow-md flex flex-col gap-3 ${
                 isNight
@@ -388,7 +406,7 @@ export function HomeScreen({
               </div>
             </div>
 
-            {/* CARD 2: ÚLTIMA ACTIVIDAD */}
+            {/* Última Actividad */}
             {latestRecord && (
               <button
                 type="button"
@@ -488,7 +506,7 @@ export function HomeScreen({
             )}
           </div>
 
-          {/* SECONDARY HELPER & CONFIDENCE ACTIONS */}
+          {/* Secondary Actions */}
           <div className="w-full flex flex-col gap-3">
             <button
               type="button"
@@ -565,7 +583,7 @@ export function HomeScreen({
             </button>
           </div>
 
-          {/* VISUAL PEACE-OF-MIND BANNER */}
+          {/* Peace-of-Mind Banner */}
           <div
             className={`w-full rounded-xl shadow-md p-3.5 flex items-center justify-between gap-3 ${
               isNight

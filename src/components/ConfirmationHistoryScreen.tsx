@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { COW_CATALOG } from '../data/mockNormandia';
-import { MilkingRecord, ThemeMode } from '../types/normandia';
+import { CowProfile, MilkingRecord, ThemeMode } from '../types/normandia';
 import { SafeImage } from './SafeImage';
 
 interface ConfirmationHistoryScreenProps {
   theme: ThemeMode;
+  operatorName: string;
+  cows: CowProfile[];
   records: MilkingRecord[];
   selectedRecordId: string;
   justSaved: boolean;
@@ -16,6 +17,8 @@ interface ConfirmationHistoryScreenProps {
 
 export function ConfirmationHistoryScreen({
   theme,
+  operatorName,
+  cows,
   records,
   selectedRecordId,
   justSaved,
@@ -34,10 +37,10 @@ export function ConfirmationHistoryScreen({
     [records, selectedRecordId]
   );
 
-  const remainingLot2Cows = useMemo(() => {
+  const remainingCows = useMemo(() => {
     const recordedIds = new Set(records.map((r) => r.cowId));
-    return COW_CATALOG.filter((c) => c.lot === 'Lote 2' && !recordedIds.has(c.id)).length;
-  }, [records]);
+    return cows.filter((c) => !recordedIds.has(c.id)).length;
+  }, [cows, records]);
 
   const totalLitersToday = useMemo(
     () => records.reduce((acc, rec) => acc + rec.liters, 0),
@@ -53,7 +56,9 @@ export function ConfirmationHistoryScreen({
     return null;
   }
 
-  const shareSummaryText = `Comprobante Normandía ${activeRecord.receiptCode}\nVaca: ${activeRecord.cowName} ${activeRecord.cowTag} (${activeRecord.lot})\nProducción: ${activeRecord.liters} Litros\nCalidad: ${activeRecord.quality}\nTurno: ${activeRecord.shift} (${activeRecord.timeFormatted})\nOrdeñador: ${activeRecord.operator}`;
+  const displayOperator = activeRecord.operator || operatorName;
+
+  const shareSummaryText = `Comprobante Normandía ${activeRecord.receiptCode}\nVaca: ${activeRecord.cowName} ${activeRecord.cowTag} (${activeRecord.lot})\nProducción: ${activeRecord.liters} Litros\nCalidad: ${activeRecord.quality}\nTurno: ${activeRecord.shift} (${activeRecord.timeFormatted})\nOrdeñador: ${displayOperator}`;
 
   const handleCopyShare = async () => {
     try {
@@ -147,7 +152,6 @@ export function ConfirmationHistoryScreen({
         </div>
       </div>
 
-      {/* Responsive Split on Desktop: Receipt + Actions on Left, Today's List on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         <div className="lg:col-span-7 flex flex-col space-y-5">
           {/* 3. CELEBRATION & EMOTIONAL RELIEF HERO */}
@@ -178,7 +182,7 @@ export function ConfirmationHistoryScreen({
             >
               Bien hecho,{' '}
               <span className={isNight ? 'text-[#FFB784] font-bold' : 'text-primary font-bold'}>
-                {activeRecord.operator}
+                {displayOperator}
               </span>
               . La información ya quedó registrada y segura en este teléfono.
             </p>
@@ -245,7 +249,6 @@ export function ConfirmationHistoryScreen({
             </div>
 
             <div className="p-5 flex flex-col space-y-4">
-              {/* Cow Identification */}
               <div
                 className={`flex items-center gap-3 p-3 rounded-xl ${
                   isNight ? 'bg-[#222222] border border-[#333333]' : 'bg-surface-container-low'
@@ -282,7 +285,6 @@ export function ConfirmationHistoryScreen({
                 </div>
               </div>
 
-              {/* Giant Sunlight-Legible Liters Box */}
               <div
                 className={`p-5 rounded-xl flex flex-col items-center justify-center text-center ${
                   isNight
@@ -333,7 +335,6 @@ export function ConfirmationHistoryScreen({
                 </div>
               </div>
 
-              {/* Shift & Milker Grid */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div
                   className={`flex flex-col p-3 rounded-lg ${
@@ -368,16 +369,15 @@ export function ConfirmationHistoryScreen({
                     Ordeñador:
                   </span>
                   <span
-                    className={`text-[18px] font-bold ${
+                    className={`text-[18px] font-bold truncate ${
                       isNight ? 'text-white' : 'text-on-surface'
                     }`}
                   >
-                    {activeRecord.operator}
+                    {displayOperator}
                   </span>
                 </div>
               </div>
 
-              {/* Sync Notice */}
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[#1e8642] text-white shadow-[2px_2px_0px_#1b1b1e]">
                 <span className="material-symbols-outlined text-[24px] shrink-0 mt-0.5 ms-filled">
                   {activeRecord.syncStatus === 'offline' ? 'wifi_off' : 'cloud_done'}
@@ -415,7 +415,7 @@ export function ConfirmationHistoryScreen({
                   isNight ? 'text-white' : 'text-on-surface'
                 }`}
               >
-                ¡Tranquilo Don Carlos!
+                ¡Tranquilo {operatorName}!
               </span>
               <p
                 className={`text-[17px] leading-snug ${
@@ -439,9 +439,9 @@ export function ConfirmationHistoryScreen({
                   REGISTRAR SIGUIENTE VACA
                 </span>
                 <span className="text-[14px] text-white/95 font-medium">
-                  {remainingLot2Cows > 0
-                    ? `Faltan ${remainingLot2Cows} ${remainingLot2Cows === 1 ? 'vaca' : 'vacas'} del Lote 2`
-                    : 'Todas las vacas del Lote 2 registradas'}
+                  {remainingCows > 0
+                    ? `Faltan ${remainingCows} ${remainingCows === 1 ? 'vaca' : 'vacas'} por registrar`
+                    : 'Escoge otra vaca o agrega una nueva'}
                 </span>
               </div>
               <span className="material-symbols-outlined text-[32px] text-white group-hover:translate-x-1 transition-transform">
@@ -466,7 +466,6 @@ export function ConfirmationHistoryScreen({
               </span>
             </button>
 
-            {/* Auxiliary Share / Print */}
             <div className="flex items-center justify-center gap-6 pt-1">
               <button
                 type="button"
@@ -505,7 +504,7 @@ export function ConfirmationHistoryScreen({
           </div>
         </div>
 
-        {/* Right Column on Desktop (or toggled section on Mobile): Today's Records Log */}
+        {/* Right Column: Today's Records Log */}
         <div
           className={`lg:col-span-5 flex-col space-y-4 no-print ${
             showAllList ? 'flex' : 'hidden lg:flex'

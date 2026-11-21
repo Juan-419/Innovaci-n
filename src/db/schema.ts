@@ -18,6 +18,22 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const cows = pgTable('cows', {
+  id: serial('id').primaryKey(),
+  clientId: text('client_id').notNull().unique(),
+  userUid: text('user_uid')
+    .references(() => users.uid, { onDelete: 'cascade' })
+    .notNull(),
+  name: text('name').notNull(),
+  tagNumber: text('tag_number').notNull(),
+  lot: text('lot').notNull(),
+  breed: text('breed').notNull(),
+  paddock: text('paddock').notNull(),
+  imageUrl: text('image_url').notNull(),
+  defaultLiters: doublePrecision('default_liters').default(16).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const milkingRecords = pgTable('milking_records', {
   id: serial('id').primaryKey(),
   clientId: text('client_id').notNull().unique(),
@@ -43,7 +59,15 @@ export const milkingRecords = pgTable('milking_records', {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
+  cows: many(cows),
   milkingRecords: many(milkingRecords),
+}));
+
+export const cowsRelations = relations(cows, ({ one }) => ({
+  user: one(users, {
+    fields: [cows.userUid],
+    references: [users.uid],
+  }),
 }));
 
 export const milkingRecordsRelations = relations(milkingRecords, ({ one }) => ({

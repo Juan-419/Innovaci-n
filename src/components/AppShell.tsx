@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { NORMANDIA_LOGO_URL } from '../data/mockNormandia';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { AppScreen, ThemeMode } from '../types/normandia';
@@ -6,6 +6,10 @@ import { SafeImage } from './SafeImage';
 
 interface AppShellProps {
   theme: ThemeMode;
+  operatorName: string;
+  onUpdateOperatorName: (name: string) => void;
+  profileModalOpen: boolean;
+  onSetProfileModalOpen: (open: boolean) => void;
   onToggleTheme: () => void;
   activeScreen: AppScreen;
   onNavigate: (screen: AppScreen) => void;
@@ -28,6 +32,10 @@ const SCREEN_SUBTITLE: Record<AppScreen, string> = {
 
 export function AppShell({
   theme,
+  operatorName,
+  onUpdateOperatorName,
+  profileModalOpen,
+  onSetProfileModalOpen,
   onToggleTheme,
   activeScreen,
   onNavigate,
@@ -42,15 +50,28 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const isNight = theme === 'noche';
-  const [profileOpen, setProfileOpen] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [nameDraft, setNameDraft] = useState(operatorName);
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+
+  useEffect(() => {
+    setNameDraft(operatorName);
+  }, [operatorName, profileModalOpen]);
 
   const handleInstallClick = async () => {
     if (isInstallable) {
       await install();
     } else {
       setShowInstallGuide(true);
+    }
+  };
+
+  const handleNameSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = nameDraft.trim();
+    if (trimmed.length >= 2) {
+      onUpdateOperatorName(trimmed);
+      onSetProfileModalOpen(false);
     }
   };
 
@@ -127,8 +148,8 @@ export function AppShell({
 
             <button
               type="button"
-              onClick={() => setProfileOpen(true)}
-              aria-label="Cuenta, respaldo e instalación"
+              onClick={() => onSetProfileModalOpen(true)}
+              aria-label="Mi nombre, cuenta e instalación"
               className={`relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
                 authUser
                   ? 'bg-[#15803D] hover:bg-[#116932] text-white'
@@ -235,18 +256,18 @@ export function AppShell({
         </div>
       </nav>
 
-      {/* Profile, Cloud Sync & Install Sheet */}
-      {profileOpen && (
+      {/* Profile, Name Edit, Cloud Sync & Install Sheet */}
+      {profileModalOpen && (
         <div
-          className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4 overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-dialog-title"
-          onClick={() => setProfileOpen(false)}
+          onClick={() => onSetProfileModalOpen(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`w-full max-w-md rounded-2xl p-5 border-2 border-[#18181B] shadow-[6px_6px_0px_#18181B] space-y-4 ${
+            className={`w-full max-w-md rounded-2xl p-5 border-2 border-[#18181B] shadow-[6px_6px_0px_#18181B] space-y-4 my-auto ${
               isNight ? 'bg-[#1A1A1A] text-white' : 'bg-[#FFFDF8] text-[#18181B]'
             }`}
           >
@@ -264,20 +285,20 @@ export function AppShell({
                     id="profile-dialog-title"
                     className="font-display text-[22px] font-bold truncate"
                   >
-                    {authUser?.displayName || 'Don Carlos Méndez'}
+                    {operatorName}
                   </h2>
                   <p
                     className={`text-[14px] truncate ${
                       isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
                     }`}
                   >
-                    {authUser ? authUser.email : 'Finca Normandía • Modo en este teléfono'}
+                    {authUser ? authUser.email : 'Finca Normandía • En este celular'}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setProfileOpen(false)}
+                onClick={() => onSetProfileModalOpen(false)}
                 className={`min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center border-2 border-[#18181B] cursor-pointer shrink-0 ${
                   isNight
                     ? 'bg-[#2A2A2A] text-white'
@@ -288,6 +309,44 @@ export function AppShell({
                 <span className="material-symbols-outlined text-[24px]">close</span>
               </button>
             </div>
+
+            {/* Edit Operator Name */}
+            <form
+              onSubmit={handleNameSubmit}
+              className={`p-4 rounded-xl border space-y-2.5 ${
+                isNight
+                  ? 'bg-[#222222] border-[#333333]'
+                  : 'bg-surface-container-low border-[#18181B]/15'
+              }`}
+            >
+              <label
+                htmlFor="profile-operator-name"
+                className="font-display text-[16px] font-bold block"
+              >
+                Cambiar tu nombre:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="profile-operator-name"
+                  type="text"
+                  maxLength={60}
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  className={`flex-1 min-h-[52px] px-3.5 rounded-xl border-2 text-[17px] ${
+                    isNight
+                      ? 'bg-[#1A1A1A] border-[#444444] text-white'
+                      : 'bg-white border-[#18181B] text-[#18181B]'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  disabled={nameDraft.trim().length < 2}
+                  className="min-h-[52px] px-4 rounded-xl bg-[#B85D19] text-white font-display text-[16px] font-bold border-2 border-[#18181B] disabled:opacity-50 cursor-pointer shrink-0"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
 
             {/* Cloud Account & Sync Card */}
             <div
@@ -303,9 +362,7 @@ export function AppShell({
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-[13px] font-bold ${
-                    authUser
-                      ? 'bg-[#15803D] text-white'
-                      : 'bg-[#B85D19] text-white'
+                    authUser ? 'bg-[#15803D] text-white' : 'bg-[#B85D19] text-white'
                   }`}
                 >
                   {authUser ? 'Cuenta conectada' : 'Solo en teléfono'}
@@ -320,8 +377,8 @@ export function AppShell({
                 {authUser
                   ? offlineCount > 0
                     ? `Tiene ${offlineCount} ${offlineCount === 1 ? 'registro guardado' : 'registros guardados'} en el celular listos para enviar.`
-                    : 'Todos sus registros de hoy están respaldados en la cuenta de la finca.'
-                  : 'Conecte su cuenta de Google para respaldar sus registros en la oficina y verlos desde otros equipos.'}
+                    : 'Todos sus registros y vacas están respaldados en la cuenta de la finca.'
+                  : 'Conecte su cuenta de Google para respaldar sus registros y vacas en la oficina.'}
               </p>
 
               {!authUser ? (
@@ -346,7 +403,7 @@ export function AppShell({
                       disabled={isSyncing}
                       onClick={() => {
                         onSyncAll();
-                        setProfileOpen(false);
+                        onSetProfileModalOpen(false);
                       }}
                       className="w-full min-h-[52px] rounded-xl bg-[#15803D] text-white font-display text-[17px] font-bold border-2 border-[#18181B] shadow-[3px_3px_0px_#18181B] active:translate-x-0.5 active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
                     >
@@ -364,7 +421,7 @@ export function AppShell({
                     type="button"
                     onClick={() => {
                       onSignOut();
-                      setProfileOpen(false);
+                      onSetProfileModalOpen(false);
                     }}
                     className={`w-full min-h-[48px] rounded-xl font-display text-[16px] font-semibold border-2 border-[#18181B] cursor-pointer ${
                       isNight ? 'bg-[#2A2A2A] text-white' : 'bg-white text-[#18181B]'
@@ -376,7 +433,6 @@ export function AppShell({
               )}
             </div>
 
-            {/* Install App on Phone (PWA) */}
             {!isInstalled && (
               <div
                 className={`p-4 rounded-xl border space-y-2.5 ${
@@ -397,13 +453,6 @@ export function AppShell({
                     Instalar en el celular
                   </span>
                 </div>
-                <p
-                  className={`text-[14px] leading-snug ${
-                    isNight ? 'text-[#D1D5DB]' : 'text-on-surface-variant'
-                  }`}
-                >
-                  Agrégala a la pantalla de inicio para abrirla con un toque y usarla sin internet en el potrero.
-                </p>
                 <button
                   type="button"
                   onClick={handleInstallClick}
@@ -436,7 +485,6 @@ export function AppShell({
         </div>
       )}
 
-      {/* Guided Install Instructions Modal */}
       {showInstallGuide && (
         <div
           className="fixed inset-0 z-[70] bg-black/65 flex items-end sm:items-center justify-center p-4"

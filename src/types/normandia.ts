@@ -10,11 +10,12 @@ export interface CowProfile {
   id: string;
   name: string;
   tagNumber: string;
-  lot: 'Lote 1' | 'Lote 2' | 'Lote 3';
+  lot: string;
   breed: string;
   paddock: string;
   imageUrl: string;
   defaultLiters: number;
+  isCustom?: boolean;
 }
 
 export interface MilkingRecord {
